@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuxeBudget | Premium Expense Tracking</title>
+    <meta name="description" content="A premium budget management tool for individuals and events.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- jsPDF & AutoTable for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Custom Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        },
+                        dark: {
+                            950: '#030712',
+                            900: '#111827',
+                            800: '#1f2937',
+                            700: '#374151',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-dark-950 text-gray-100 min-h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="w-64 bg-dark-900/50 backdrop-blur-xl border-r border-white/5 flex flex-col transition-all duration-300 z-50">
+        <div class="p-6 flex items-center gap-3">
+            <div
+                class="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-600/20">
+                <i data-lucide="wallet" class="text-white w-6 h-6"></i>
+            </div>
+            <span class="text-xl font-bold tracking-tight">Luxe<span class="text-primary-500">Budget</span></span>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <a href="#" data-view="dashboard" class="nav-link active">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" data-view="events" class="nav-link">
+                <i data-lucide="calendar"></i>
+                <span>Events</span>
+            </a>
+            <a href="#" data-view="history" class="nav-link">
+                <i data-lucide="history"></i>
+                <span>History</span>
+            </a>
+            <a href="#" data-view="accounts" class="nav-link">
+                <i data-lucide="users"></i>
+                <span>Accounts</span>
+            </a>
+            <div class="pt-6 pb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Reports</div>
+
+            <a href="#" data-view="export" class="nav-link">
+                <i data-lucide="file-text"></i>
+                <span>Export</span>
+            </a>
+        </nav>
+
+        <div class="p-4 mt-auto">
+            <div class="bg-dark-800/80 rounded-2xl p-4 border border-white/5">
+                <div class="flex items-center gap-3 mb-3">
+                    <div
+                        class="w-10 h-10 rounded-full bg-gradient-to-tr from-primary-600 to-indigo-500 flex items-center justify-center font-bold">
+                        JD
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-medium truncate">John Doe</p>
+                        <p class="text-xs text-gray-500 truncate">Personal Account</p>
+                    </div>
+                </div>
+                <button id="open-settings-btn"
+                    class="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    Account Settings
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-h-screen max-h-screen overflow-hidden relative">
+        <!-- Background Glows -->
+        <div
+            class="absolute top-[-10%] right-[-10%] w-[400px] h-[400px] bg-primary-600/10 rounded-full blur-[120px] -z-10">
+        </div>
+        <div class="absolute bottom-0 left-[20%] w-[300px] h-[300px] bg-indigo-600/10 rounded-full blur-[100px] -z-10">
+        </div>
+
+        <!-- Top Header -->
+        <header
+            class="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-dark-950/50 backdrop-blur-md">
+            <div>
+                <h1 id="view-title" class="text-2xl font-bold">Dashboard</h1>
+                <p id="view-subtitle" class="text-sm text-gray-400">Welcome back, here's your overview.</p>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button
+                    class="p-2.5 bg-dark-900 border border-white/5 rounded-xl text-gray-400 hover:text-white transition-all relative">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span
+                        class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-dark-950"></span>
+                </button>
+                <button
+                    class="p-2.5 bg-dark-900 border border-white/5 rounded-xl text-gray-400 hover:text-white transition-all">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </button>
+                <div class="h-8 w-px bg-white/5 mx-2"></div>
+                <button id="add-transaction-btn"
+                    class="bg-white text-dark-950 hover:bg-gray-200 px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                    Add Record
+                </button>
+            </div>
+        </header>
+
+        <div id="content" class="flex-1 overflow-y-auto p-8 scroll-smooth">
+            <!-- Active Event Banner (Dashboard Only) -->
+            <div id="active-event-banner"
+                class="hidden mb-8 p-4 glass-card border-l-4 border-primary-500 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-10 h-10 bg-primary-500/10 rounded-xl flex items-center justify-center text-primary-500">
+                        <i data-lucide="flag"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold opacity-50 uppercase tracking-widest text-[10px]">Active Event</h4>
+                        <p id="dashboard-active-event-title" class="text-lg font-bold text-white">None</p>
+                    </div>
+                </div>
+                <button onclick="switchView('events')"
+                    class="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-semibold transition-all">Change
+                    Event</button>
+            </div>
+
+            <!-- View: Dashboard (Default) -->
+            <div id="dashboard-view"
+                class="view-container space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="glass-card p-6 flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <div
+                                class="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500">
+                                <i data-lucide="trending-up"></i>
+                            </div>
+                            <span
+                                class="text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-1 rounded-lg">+12.5%</span>
+                        </div>
+                        <p class="text-sm text-gray-400 font-medium">Total Balance</p>
+                        <h3 id="stat-total-balance" class="text-3xl font-bold mt-1">₹0</h3>
+                    </div>
+
+                    <div id="target-card" class="glass-card p-6 flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <div
+                                class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500">
+                                <i data-lucide="target"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 font-medium">Target Amont</p>
+                        <h3 id="stat-monthly-target" class="text-3xl font-bold mt-1">₹0</h3>
+                        <div class="mt-4 w-full bg-dark-800 rounded-full h-2 overflow-hidden">
+                            <div id="target-progress-bar"
+                                class="bg-blue-500 h-full rounded-full transition-all duration-500" style="width: 0%">
+                            </div>
+                        </div>
+                        <p id="target-progress-text"
+                            class="text-[10px] mt-2 text-gray-500 uppercase tracking-wider font-bold">0% of target used
+                        </p>
+                    </div>
+
+                    <div class="glass-card p-6 flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <div
+                                class="w-12 h-12 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500">
+                                <i data-lucide="shopping-bag"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 font-medium">Expenses </p>
+                        <h3 id="stat-monthly-expenses" class="text-3xl font-bold mt-1">₹0</h3>
+                    </div>
+
+                    <div id="remaining-card" class="glass-card p-6 flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <div
+                                class="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500">
+                                <i data-lucide="activity"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 font-medium">Remaining Budget</p>
+                        <h3 id="stat-remaining-budget" class="text-3xl font-bold mt-1">₹0</h3>
+                        <p class="text-xs text-amber-500 mt-2 flex items-center gap-1 font-medium">
+                            <i data-lucide="alert-circle" class="w-3 h-3"></i> Status: Active
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Spending Trends -->
+                    <div class="lg:col-span-2 glass-card p-8">
+                        <div class="flex items-center justify-between mb-8">
+                            <div>
+                                <h4 class="text-xl font-bold">Spending Trends</h4>
+                                <p class="text-sm text-gray-500">Overview of income vs expenses</p>
+                            </div>
+                            <select class="bg-dark-800 border border-white/5 rounded-lg px-3 py-1 text-sm outline-none">
+                                <option>Last 6 Months</option>
+                                <option>Last Year</option>
+                            </select>
+                        </div>
+                        <div class="aspect-[16/7] w-full">
+                            <canvas id="spendingTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Category Breakdown -->
+                    <div class="glass-card p-8">
+                        <h4 class="text-xl font-bold mb-1">Categories</h4>
+                        <p class="text-sm text-gray-500 mb-8">Where your money goes</p>
+                        <div class="aspect-square relative flex items-center justify-center">
+                            <canvas id="categoryChart"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span id="category-total-text" class="text-2xl font-bold">₹0</span>
+                                <span class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Total
+                                    Spent</span>
+                            </div>
+                        </div>
+                        <div id="category-labels" class="mt-8 space-y-3">
+                            <!-- Loaded via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="glass-card overflow-hidden">
+                    <div class="p-8 flex items-center justify-between border-b border-white/5">
+                        <h4 class="text-xl font-bold">Recent Transactions</h4>
+                        <button onclick="switchView('history')"
+                            class="text-primary-500 hover:text-primary-400 text-sm font-semibold transition-colors">View
+                            All</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-dark-900/50 text-gray-500 text-xs uppercase tracking-widest">
+                                    <th class="px-8 py-4 font-semibold">Transaction</th>
+                                    <th class="px-8 py-4 font-semibold">Category</th>
+                                    <th class="px-8 py-4 font-semibold">Date</th>
+                                    <th class="px-8 py-4 font-semibold text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transaction-list" class="divide-y divide-white/5">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View: Events -->
+            <div id="events-view"
+                class="view-container hidden space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-3xl font-bold">Event Budgets</h2>
+                        <p class="text-gray-400">Track spending for specific project/trips</p>
+                    </div>
+                    <button onclick="document.getElementById('add-event-modal').classList.add('show')"
+                        class="bg-primary-600 hover:bg-primary-500 px-6 py-3 rounded-2xl font-bold transition-all flex items-center gap-2">
+                        <i data-lucide="plus"></i> Create Event
+                    </button>
+                </div>
+                <div id="event-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Events will be rendered here via JS -->
+                </div>
+            </div>
+
+            <!-- View: History -->
+            <div id="history-view"
+                class="view-container hidden space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div class="glass-card overflow-hidden">
+                    <div class="p-8 border-b border-white/5 flex items-center justify-between">
+                        <h4 class="text-xl font-bold">Full Transaction History</h4>
+                        <div class="flex gap-4">
+                            <input type="text" placeholder="Search..."
+                                class="bg-dark-800 border border-white/5 rounded-xl px-4 py-2 outline-none focus:border-primary-500 transition-all">
+                            <button class="bg-dark-800 p-2.5 rounded-xl border border-white/5 hover:text-primary-500"><i
+                                    data-lucide="filter" class="w-5 h-5"></i></button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-dark-900/50 text-gray-500 text-xs uppercase tracking-widest">
+                                <tr>
+                                    <th class="px-8 py-4">Transaction</th>
+                                    <th class="px-8 py-4">Category</th>
+                                    <th class="px-8 py-4">Date</th>
+                                    <th class="px-8 py-4 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="full-transaction-list" class="divide-y divide-white/5">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View: Accounts -->
+            <div id="accounts-view"
+                class="view-container hidden space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div id="accounts-list" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Accounts dynamically rendered via JS -->
+                </div>
+            </div>
+
+
+
+            <!-- View: Export -->
+            <div id="export-view"
+                class="view-container hidden space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div class="max-w-2xl mx-auto space-y-8 py-10">
+                    <div class="text-center space-y-2">
+                        <h2 class="text-4xl font-bold">Export Data</h2>
+                        <p class="text-gray-400">Back up your financial records or migrate to another tool</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass-card p-8 flex flex-col items-center text-center space-y-6 hover:border-primary-500 transition-all cursor-pointer group"
+                            onclick="exportData('csv')">
+                            <div
+                                class="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                                <i data-lucide="file-spreadsheet" class="w-8 h-8"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold">Export as CSV</h3>
+                                <p class="text-sm text-gray-500 mt-2">Compatible with Excel, Google Sheets, and Numbers
+                                </p>
+                            </div>
+                            <button
+                                class="w-full py-3 bg-emerald-600/20 text-emerald-500 rounded-xl font-bold hover:bg-emerald-600 hover:text-white transition-all underline">Download
+                                .csv</button>
+                        </div>
+
+                        <div class="glass-card p-8 flex flex-col items-center text-center space-y-6 hover:border-primary-500 transition-all cursor-pointer group"
+                            onclick="exportData('pdf')">
+                            <div
+                                class="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                                <i data-lucide="file-text" class="w-8 h-8"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold">Export as PDF</h3>
+                                <p class="text-sm text-gray-500 mt-2">Professional report for printing or sharing</p>
+                            </div>
+                            <button
+                                class="w-full py-3 bg-blue-600/20 text-blue-500 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition-all underline">Download
+                                .pdf</button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-dark-900 border border-white/5 rounded-2xl flex items-start gap-4">
+                        <i data-lucide="info" class="w-6 h-6 text-primary-500 shrink-0 mt-1"></i>
+                        <p class="text-sm text-gray-400">Everything will be exported exactly as it appears in your
+                            records, including event associations and transaction descriptions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Add Record -->
+    <div id="add-modal"
+        class="fixed inset-0 bg-dark-950/80 backdrop-blur-xl z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+        <div
+            class="bg-dark-900 border border-white/10 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl transform scale-95 transition-all duration-300">
+            <div class="p-8 border-b border-white/5 flex items-center justify-between">
+                <h3 class="text-2xl font-bold">Add Record</h3>
+                <button id="close-modal" class="p-2 text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="record-form" class="p-8 space-y-6">
+                <div class="flex gap-4">
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="type" value="expense" checked class="hidden peer">
+                        <div
+                            class="p-4 rounded-2xl border border-white/5 text-center peer-checked:bg-red-500/10 peer-checked:border-red-500/50 peer-checked:text-red-500 transition-all font-bold">
+                            Expense
+                        </div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="type" value="income" class="hidden peer">
+                        <div
+                            class="p-4 rounded-2xl border border-white/5 text-center peer-checked:bg-green-500/10 peer-checked:border-green-500/50 peer-checked:text-green-500 transition-all font-bold">
+                            Income
+                        </div>
+                    </label>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Amount</label>
+                    <div class="relative">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-500">₹</span>
+                        <input type="number" name="amount" step="0.01"
+                            class="w-full bg-dark-800 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-2xl font-bold focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all"
+                            placeholder="0.00" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-sm text-gray-500 font-medium">Category</label>
+                        <select name="category"
+                            class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 outline-none focus:border-primary-500 transition-all">
+                            <option value="Food & Dining">Food & Dining</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Bills & Utilities">Bills & Utilities</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="Income Source">Income Source</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm text-gray-500 font-medium">Date</label>
+                        <input type="date" name="date"
+                            class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 outline-none focus:border-primary-500 transition-all text-white">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Description</label>
+                    <textarea name="description"
+                        class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 outline-none focus:border-primary-500 transition-all min-h-[100px]"
+                        placeholder="Add a note..."></textarea>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-5 bg-gradient-to-r from-primary-600 to-indigo-600 rounded-2xl font-bold text-lg shadow-lg shadow-primary-600/20 hover:shadow-primary-600/40 active:scale-[0.98] transition-all">
+                    Save Record
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Event -->
+    <div id="add-event-modal"
+        class="fixed inset-0 bg-dark-950/80 backdrop-blur-xl z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+        <div
+            class="bg-dark-900 border border-white/10 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl transform scale-95 transition-all duration-300">
+            <div class="p-8 border-b border-white/5 flex items-center justify-between">
+                <h3 class="text-2xl font-bold">Create New Event</h3>
+                <button onclick="document.getElementById('add-event-modal').classList.remove('show')"
+                    class="p-2 text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="event-form" class="p-8 space-y-6">
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Event Type</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="flex items-center gap-3 p-4 rounded-2xl border border-white/10 bg-dark-800 cursor-pointer">
+                            <input type="radio" name="eventMode" value="setLimit" checked class="h-4 w-4 accent-primary-500">
+                            <span>Set Limit</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-4 rounded-2xl border border-white/10 bg-dark-800 cursor-pointer">
+                            <input type="radio" name="eventMode" value="noLimit" class="h-4 w-4 accent-primary-500">
+                            <span>No Limit</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Event Name</label>
+                    <input type="text" name="eventName"
+                        class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 focus:border-primary-500 outline-none transition-all"
+                        placeholder="e.g. Europe Trip, College Fest..." required>
+                </div>
+
+                <div id="total-amount-group" class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Initial Budget (Total Amount)</label>
+                    <div class="relative">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-500">₹</span>
+                        <input type="number" name="totalAmount"
+                            class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 pl-12 text-xl font-bold focus:border-primary-500 outline-none transition-all"
+                            placeholder="0" required>
+                    </div>
+                </div>
+
+                <div id="target-amount-group" class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Spending Target Limit</label>
+                    <div class="relative">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-500">₹</span>
+                        <input type="number" name="targetAmount"
+                            class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 pl-12 text-xl font-bold focus:border-primary-500 outline-none transition-all"
+                            placeholder="0" required>
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-4 bg-primary-600 rounded-2xl font-bold text-lg shadow-lg hover:bg-primary-500 transition-all">
+                    Create Event
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Settings -->
+    <div id="settings-modal"
+        class="fixed inset-0 bg-dark-950/80 backdrop-blur-xl z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+        <div
+            class="bg-dark-900 border border-white/10 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl transform scale-95 transition-all duration-300">
+            <div class="p-8 border-b border-white/5 flex items-center justify-between">
+                <h3 class="text-2xl font-bold">Account Settings</h3>
+                <button id="close-settings" class="p-2 text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="settings-form" class="p-8 space-y-6">
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Initial Balance (Global)</label>
+                    <div class="relative">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-500">₹</span>
+                        <input type="number" name="initialBalance"
+                            class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 pl-12 text-xl font-bold focus:border-primary-500 outline-none transition-all"
+                            placeholder="0">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Monthly Spending Target</label>
+                    <div class="relative">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-500">₹</span>
+                        <input type="number" name="monthlyTarget"
+                            class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 pl-12 text-xl font-bold focus:border-primary-500 outline-none transition-all"
+                            placeholder="15000">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-4 bg-primary-600 rounded-2xl font-bold text-lg shadow-lg hover:bg-primary-500 transition-all">
+                    Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Account -->
+    <div id="add-account-modal"
+        class="fixed inset-0 bg-dark-950/80 backdrop-blur-xl z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+        <div
+            class="bg-dark-900 border border-white/10 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl transform scale-95 transition-all duration-300">
+            <div class="p-8 border-b border-white/5 flex items-center justify-between">
+                <h3 class="text-2xl font-bold">Create New Account</h3>
+                <button onclick="document.getElementById('add-account-modal').classList.remove('show')"
+                    class="p-2 text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <form id="account-form" class="p-8 space-y-6">
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Account Name</label>
+                    <input type="text" name="accountName"
+                        class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 focus:border-primary-500 outline-none transition-all"
+                        placeholder="e.g. HDFC Bank, Savings, Cash..." required>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Initial Balance</label>
+                    <div class="relative">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-500">₹</span>
+                        <input type="number" name="initialBalance"
+                            class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 pl-12 text-xl font-bold focus:border-primary-500 outline-none transition-all"
+                            placeholder="0" required>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-sm text-gray-500 font-medium">Monthly Target</label>
+                    <div class="relative">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-500">₹</span>
+                        <input type="number" name="monthlyTarget"
+                            class="w-full bg-dark-800 border border-white/5 rounded-2xl p-4 pl-12 text-xl font-bold focus:border-primary-500 outline-none transition-all"
+                            placeholder="15000" required>
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-4 bg-primary-600 rounded-2xl font-bold text-lg shadow-lg hover:bg-primary-500 transition-all">
+                    Create Account
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js" type="module"></script>
+</body>
+
+</html>

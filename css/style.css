@@ -1,0 +1,165 @@
+@layer base {
+    :root {
+        --glass: rgba(17, 24, 39, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.05);
+    }
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism Classes */
+.glass-card {
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Sidebar Nav Links */
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    color: #9ca3af;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.nav-link i {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: #fff;
+}
+
+.nav-link.active {
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Custom Modal State */
+.fixed.inset-0.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.fixed.inset-0.show > div {
+    transform: scale(1);
+}
+
+/* Animations */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes float-slow {
+    0%, 100% { transform: translate(0, 0); }
+    33% { transform: translate(10px, -15px); }
+    66% { transform: translate(-10px, 10px); }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-slow {
+    animation: float-slow 8s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+    animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.glass-input {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 20px -5px rgba(139, 92, 246, 0.3);
+}
+
+/* Form Styling */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+/* Transaction List Hover */
+#transaction-list tr {
+    transition: all 0.2s;
+}
+
+#transaction-list tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Chart Canvas Sizing */
+#spendingTrendChart, #categoryChart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.view-container.hidden {
+    display: none;
+}
